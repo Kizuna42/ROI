@@ -355,6 +355,17 @@ const ROISimulator: React.FC = () => {
         </form>
       )}
 
+      {activeTab !== 'inputs' && !results && (
+        <div className="card text-center space-y-4">
+          <p className="text-gray-700">
+            入力値を確認してからROI分析を実行してください。
+          </p>
+          <button type="button" onClick={() => setActiveTab('inputs')} className="btn btn-primary">
+            入力項目に戻る
+          </button>
+        </div>
+      )}
+
       {activeTab === 'results' && results && (
         <div className="space-y-8">
           <KPICards results={results} />
