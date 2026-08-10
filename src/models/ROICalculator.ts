@@ -145,8 +145,8 @@ export class ROICalculator {
   private static calculateIRR(initialInvestment: number, annualBenefit: number, years: number): number {
     // Simple IRR calculation using Newton-Raphson method
     let irr = 0.1; // Initial guess
-    let tolerance = 0.0001;
-    let maxIterations = 100;
+    const tolerance = 0.0001;
+    const maxIterations = 100;
     
     for (let i = 0; i < maxIterations; i++) {
       let f = -initialInvestment;
