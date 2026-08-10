@@ -31,14 +31,6 @@ const CostComparisonChart: React.FC<CostComparisonChartProps> = ({ results }) =>
     }
   ];
 
-  const formatTooltip = (value: number, name: string) => {
-    return [FormattingUtils.formatCurrency(value), name];
-  };
-
-  const formatLabel = (label: string) => {
-    return label;
-  };
-
   return (
     <div className="card">
       <div className="card-header">
@@ -66,8 +58,11 @@ const CostComparisonChart: React.FC<CostComparisonChartProps> = ({ results }) =>
               tickFormatter={(value) => FormattingUtils.formatCurrencyCompact(value)}
             />
             <Tooltip 
-              formatter={formatTooltip}
-              labelFormatter={formatLabel}
+              formatter={(value, name) => [
+                FormattingUtils.formatCurrency(Number(value ?? 0)),
+                name ?? '',
+              ]}
+              labelFormatter={(label) => String(label ?? '')}
               contentStyle={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e9ecef',

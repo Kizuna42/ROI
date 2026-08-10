@@ -15,8 +15,10 @@ interface SensitivityData {
   roiResults: number[];
 }
 
+type SelectedMetric = 'roi3Year' | 'paybackPeriodMonths' | 'npv';
+
 const SensitivityHeatmap: React.FC<SensitivityHeatmapProps> = ({ baseInputs, baseResults }) => {
-  const [selectedMetric, setSelectedMetric] = useState<'roi3Year' | 'paybackPeriodMonths' | 'npv'>('roi3Year');
+  const [selectedMetric, setSelectedMetric] = useState<SelectedMetric>('roi3Year');
   
   const getVariationRange = (baseValue: number, percentage: number = 0.3) => {
     const variation = baseValue * percentage;
@@ -135,7 +137,7 @@ const SensitivityHeatmap: React.FC<SensitivityHeatmapProps> = ({ baseInputs, bas
         <div className="flex gap-2">
           <select 
             value={selectedMetric} 
-            onChange={(e) => setSelectedMetric(e.target.value as any)}
+            onChange={(e) => setSelectedMetric(e.target.value as SelectedMetric)}
             className="form-input text-sm"
           >
             <option value="roi3Year">3年間ROI</option>

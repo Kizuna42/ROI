@@ -1,21 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { ROIInputs, ROIResults, ExecutiveSummary } from '../models/DataTypes';
+import React, { lazy, Suspense, useMemo, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { ROIInputs } from '../models/DataTypes';
 import { ROICalculator } from '../models/ROICalculator';
 import { ReportGenerator } from '../models/ReportGenerator';
 import { ValidationUtils } from '../utils/validation';
 import { FormattingUtils } from '../utils/formatting';
 import KPICards from './KPICards';
-import CostComparisonChart from './CostComparisonChart';
-import CumulativeEffectGraph from './CumulativeEffectGraph';
-import SensitivityHeatmap from './SensitivityHeatmap';
+
+const CostComparisonChart = lazy(() => import('./CostComparisonChart'));
+const CumulativeEffectGraph = lazy(() => import('./CumulativeEffectGraph'));
+const SensitivityHeatmap = lazy(() => import('./SensitivityHeatmap'));
+
+type ActiveTab = 'inputs' | 'results' | 'summary';
+
+interface TabButtonProps {
+  tabKey: ActiveTab;
+  label: string;
+  activeTab: ActiveTab;
+  onSelect: (tab: ActiveTab) => void;
+}
+
+const TabButton = ({ tabKey, label, activeTab, onSelect }: TabButtonProps) => (
+  <button
+    type="button"
+    onClick={() => onSelect(tabKey)}
+    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+      activeTab === tabKey
+        ? 'bg-primary-600 text-white'
+        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+    }`}
+  >
+    {label}
+  </button>
+);
 
 const ROISimulator: React.FC = () => {
-  const [results, setResults] = useState<ROIResults | null>(null);
-  const [executiveSummary, setExecutiveSummary] = useState<ExecutiveSummary | null>(null);
-  const [activeTab, setActiveTab] = useState<'inputs' | 'results' | 'summary'>('inputs');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('inputs');
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<ROIInputs>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<ROIInputs>({
     defaultValues: {
       basicInfo: {
         productName: 'SaaS製品',
@@ -70,26 +92,21 @@ const ROISimulator: React.FC = () => {
     }
   });
 
-  const watchedValues = watch();
-
-  useEffect(() => {
+  const watchedValues = useWatch({ control }) as ROIInputs;
+  const { results, executiveSummary } = useMemo(() => {
     const validationErrors = ValidationUtils.validateROIInputs(watchedValues);
-    if (validationErrors.length === 0) {
-      const calculatedResults = ROICalculator.calculate(watchedValues);
-      setResults(calculatedResults);
-      
-      const summary = ReportGenerator.generateExecutiveSummary(watchedValues, calculatedResults);
-      setExecutiveSummary(summary);
+    if (validationErrors.length > 0) {
+      return { results: null, executiveSummary: null };
     }
+
+    const calculatedResults = ROICalculator.calculate(watchedValues);
+    return {
+      results: calculatedResults,
+      executiveSummary: ReportGenerator.generateExecutiveSummary(watchedValues, calculatedResults),
+    };
   }, [watchedValues]);
 
-  const onSubmit = (data: ROIInputs) => {
-    const calculatedResults = ROICalculator.calculate(data);
-    setResults(calculatedResults);
-    
-    const summary = ReportGenerator.generateExecutiveSummary(data, calculatedResults);
-    setExecutiveSummary(summary);
-    
+  const onSubmit = () => {
     setActiveTab('results');
   };
 
@@ -107,20 +124,6 @@ const ROISimulator: React.FC = () => {
     }
   };
 
-  const TabButton = ({ tabKey, label }: { tabKey: typeof activeTab; label: string }) => (
-    <button
-      type="button"
-      onClick={() => setActiveTab(tabKey)}
-      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-        activeTab === tabKey
-          ? 'bg-primary-600 text-white'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
@@ -133,9 +136,9 @@ const ROISimulator: React.FC = () => {
       </div>
 
       <div className="flex gap-4 mb-6">
-        <TabButton tabKey="inputs" label="入力項目" />
-        <TabButton tabKey="results" label="分析結果" />
-        <TabButton tabKey="summary" label="エグゼクティブサマリー" />
+        <TabButton tabKey="inputs" label="入力項目" activeTab={activeTab} onSelect={setActiveTab} />
+        <TabButton tabKey="results" label="分析結果" activeTab={activeTab} onSelect={setActiveTab} />
+        <TabButton tabKey="summary" label="エグゼクティブサマリー" activeTab={activeTab} onSelect={setActiveTab} />
       </div>
 
       {activeTab === 'inputs' && (
@@ -355,13 +358,15 @@ const ROISimulator: React.FC = () => {
       {activeTab === 'results' && results && (
         <div className="space-y-8">
           <KPICards results={results} />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <CostComparisonChart results={results} />
-            <CumulativeEffectGraph results={results} analysisYears={watchedValues.basicInfo.analysisYears} />
-          </div>
-          
-          <SensitivityHeatmap baseInputs={watchedValues} baseResults={results} />
+
+          <Suspense fallback={<div className="card text-center text-gray-600">分析チャートを読み込んでいます...</div>}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <CostComparisonChart results={results} />
+              <CumulativeEffectGraph results={results} analysisYears={watchedValues.basicInfo.analysisYears} />
+            </div>
+
+            <SensitivityHeatmap baseInputs={watchedValues} baseResults={results} />
+          </Suspense>
           
           <div className="flex justify-end gap-4">
             <button onClick={exportReport} className="btn btn-secondary">
