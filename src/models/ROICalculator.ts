@@ -163,36 +163,56 @@ export class ROICalculator {
       return NaN;
     }
 
-    // Newton-Raphson method
-    let irr = 0.1; // Initial guess
-    const tolerance = 0.0001;
-    const maxIterations = 100;
-
-    for (let i = 0; i < maxIterations; i++) {
+    // NPV(r) = -I + Σ B/(1+r)^t is strictly decreasing on r > -1, tends to +∞ as r → -1
+    // and to -I < 0 as r → ∞, so exactly one root exists. Bracket it and use
+    // Newton-Raphson, falling back to bisection whenever a step leaves the bracket.
+    const npvAndDerivative = (rate: number): [number, number] => {
       let f = -initialInvestment;
       let df = 0;
-
       for (let year = 1; year <= years; year++) {
-        f += annualBenefit / Math.pow(1 + irr, year);
-        df -= year * annualBenefit / Math.pow(1 + irr, year + 1);
+        const discounted = annualBenefit / Math.pow(1 + rate, year);
+        f += discounted;
+        df -= (year * discounted) / (1 + rate);
       }
+      return [f, df];
+    };
 
-      if (Math.abs(f) < tolerance) {
+    let lo = -0.9999999999;
+    let hi = 1;
+    while (npvAndDerivative(hi)[0] > 0) {
+      hi *= 2;
+      if (hi > 1e12) return NaN;
+    }
+    if (!(npvAndDerivative(lo)[0] > 0)) {
+      // No sign change within a representable range
+      return NaN;
+    }
+
+    let irr = Math.min(Math.max(0.1, lo), hi); // Initial guess
+    const maxIterations = 200;
+
+    for (let i = 0; i < maxIterations; i++) {
+      const [f, df] = npvAndDerivative(irr);
+      if (f === 0) {
         return irr * 100;
       }
-
-      const next = irr - f / df;
-      if (!Number.isFinite(next) || next <= -1) {
-        // Diverged outside the domain of the NPV function
-        return NaN;
+      if (f > 0) {
+        lo = irr;
+      } else {
+        hi = irr;
       }
-      if (Math.abs(next - irr) < 1e-12) {
+
+      let next = irr - f / df;
+      if (!Number.isFinite(next) || next <= lo || next >= hi) {
+        next = (lo + hi) / 2;
+      }
+      if (Math.abs(next - irr) <= 1e-15 * Math.max(1, Math.abs(next)) || hi - lo <= 1e-15) {
         return next * 100;
       }
       irr = next;
     }
 
-    return NaN;
+    return irr * 100;
   }
 
   private static calculateCumulativeSavings(

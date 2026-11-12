@@ -47,6 +47,46 @@ describe('ROICalculator.calculate', () => {
     expect(Math.abs(npvAtIrr)).toBeLessThan(1);
   });
 
+  // Net annual benefit comes only from opportunityLossReduction; initial investment stays at 3,000,000
+  const withNetBenefit = (netAnnualBenefit: number, analysisYears: number) =>
+    createInputs({
+      basicInfo: { analysisYears },
+      efficiencyGains: { personnelReduction: 0, workHourReduction: 0, automationPercentage: 0 },
+      qualityImprovements: { errorReduction: 0, reworkReduction: 0 },
+      otherBenefits: { opportunityLossReduction: netAnnualBenefit, scalabilityImprovement: 0 },
+      operationalCosts: { monthlySubscription: 0, maintenanceCost: 0, supportCost: 0 },
+    });
+
+  it('finds a negative IRR when the benefit does not recover the investment within one year', () => {
+    const results = ROICalculator.calculate(withNetBenefit(1_500_000, 1));
+
+    expect(results.netAnnualBenefit).toBe(1_500_000);
+    expect(results.irr).toBeCloseTo(-50, 4);
+  });
+
+  it('finds a negative IRR where the first Newton step overshoots below -100%', () => {
+    const results = ROICalculator.calculate(withNetBenefit(520_000, 2));
+    const rate = results.irr / 100;
+    const npvAtIrr = -3_000_000 + 520_000 / (1 + rate) + 520_000 / (1 + rate) ** 2;
+
+    expect(results.irr).toBeCloseTo(-48.8, 1);
+    expect(Math.abs(npvAtIrr)).toBeLessThan(1);
+  });
+
+  it('finds an IRR at which NPV is zero across a wide range of inputs', () => {
+    for (const years of [1, 2, 3, 5, 10]) {
+      for (const benefit of [1_000, 100_000, 504_000, 1_500_000, 3_000_000, 30_000_000]) {
+        const { irr } = ROICalculator.calculate(withNetBenefit(benefit, years));
+        const rate = irr / 100;
+        let npv = -3_000_000;
+        for (let year = 1; year <= years; year++) npv += benefit / (1 + rate) ** year;
+
+        expect(Number.isFinite(irr), `years=${years} benefit=${benefit}`).toBe(true);
+        expect(Math.abs(npv), `years=${years} benefit=${benefit}`).toBeLessThan(1);
+      }
+    }
+  });
+
   it('reports payback as never reached when the net benefit is not positive', () => {
     const inputs = createInputs({
       efficiencyGains: { personnelReduction: 0, workHourReduction: 0, automationPercentage: 0 },
