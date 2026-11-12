@@ -357,6 +357,20 @@ const ROISimulator: React.FC = () => {
                 />
               </div>
             </div>
+            <p className="mt-3 text-sm text-gray-600">
+              人件費削減率（合成）：
+              <strong>
+                {FormattingUtils.formatPercentage(
+                  ROICalculator.combineReductionRates([
+                    watchedValues.efficiencyGains?.personnelReduction,
+                    watchedValues.efficiencyGains?.workHourReduction,
+                    watchedValues.efficiencyGains?.automationPercentage
+                  ]) * 100
+                )}
+              </strong>
+              <br />
+              ※ 3つの削減率は単純合算せず、残りの人件費に順に効くものとして 1 − (1 − 人員削減率)(1 − 労働時間削減率)(1 − 自動化率) で合成します（合成後は 100% を超えません）。
+            </p>
           </div>
 
           <div className="flex justify-end">

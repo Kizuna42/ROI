@@ -93,7 +93,12 @@ export class ReportGenerator {
   }
 
   private static generateFullReport(inputs: ROIInputs, results: ROIResults): string {
-    const { basicInfo, humanResources, businessMetrics } = inputs;
+    const { basicInfo, humanResources, businessMetrics, efficiencyGains } = inputs;
+    const laborReductionRate = ROICalculator.combineReductionRates([
+      efficiencyGains.personnelReduction,
+      efficiencyGains.workHourReduction,
+      efficiencyGains.automationPercentage
+    ]) * 100;
     const { 
       initialInvestmentTotal,
       annualSavings,
@@ -141,6 +146,8 @@ export class ReportGenerator {
 - **手戻り費用**: 手戻り率${ROICalculator.formatPercentage(businessMetrics.reworkRate)}による損失
 
 ### 導入後の効果
+- **人件費削減率（合成）**: ${ROICalculator.formatPercentage(laborReductionRate)}（人員削減率${ROICalculator.formatPercentage(efficiencyGains.personnelReduction)}・労働時間削減率${ROICalculator.formatPercentage(efficiencyGains.workHourReduction)}・自動化率${ROICalculator.formatPercentage(efficiencyGains.automationPercentage)}）
+  - ※ 各削減率は残りの人件費に順に効くものとして 1 − (1 − 人員削減率)(1 − 労働時間削減率)(1 − 自動化率) で合成しています（単純合算ではないため、合成後の削減率は 100% を超えません）。
 - **年間削減額**: ${ROICalculator.formatCurrency(annualSavings)}
 - **運用コスト**: ${ROICalculator.formatCurrency(results.annualOperationalCost)}
 - **純削減額**: ${ROICalculator.formatCurrency(netAnnualBenefit)}
