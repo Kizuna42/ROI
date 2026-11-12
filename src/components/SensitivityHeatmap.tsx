@@ -93,8 +93,24 @@ const SensitivityHeatmap: React.FC<SensitivityHeatmapProps> = ({ baseInputs, bas
   const sensitivityData = calculateSensitivity();
 
   const getColorClass = (value: number, baseValue: number) => {
-    const percentChange = ((value - baseValue) / baseValue) * 100;
-    
+    if (!Number.isFinite(value) || !Number.isFinite(baseValue)) {
+      // e.g. payback never reached: treat as the worst case unless both are equal
+      if (value === baseValue) return 'bg-gray-100';
+      const valueIsWorse = selectedMetric === 'paybackPeriodMonths'
+        ? value === Infinity || Number.isNaN(value)
+        : !Number.isFinite(value);
+      return valueIsWorse ? 'bg-danger-300' : 'bg-success-500';
+    }
+    if (baseValue === 0) {
+      if (value === 0) return 'bg-gray-100';
+      const improved = selectedMetric === 'paybackPeriodMonths' ? value < 0 : value > 0;
+      return improved ? 'bg-success-500' : 'bg-danger-300';
+    }
+
+    // Shorter payback is better, so invert the direction for that metric
+    const direction = selectedMetric === 'paybackPeriodMonths' ? -1 : 1;
+    const percentChange = direction * ((value - baseValue) / Math.abs(baseValue)) * 100;
+
     if (percentChange > 20) return 'bg-success-500';
     if (percentChange > 10) return 'bg-success-300';
     if (percentChange > 5) return 'bg-success-100';
