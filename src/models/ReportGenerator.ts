@@ -1,5 +1,6 @@
 import { ROIInputs, ROIResults, ExecutiveSummary } from './DataTypes';
 import { ROICalculator } from './ROICalculator';
+import { FormattingUtils } from '../utils/formatting';
 
 export class ReportGenerator {
   static generateExecutiveSummary(inputs: ROIInputs, results: ROIResults): ExecutiveSummary {
@@ -77,6 +78,20 @@ export class ReportGenerator {
     }
   }
 
+  private static generateConclusion(productName: string, results: ROIResults): string {
+    const { paybackPeriodMonths, roi3Year, npv } = results;
+
+    if (!Number.isFinite(paybackPeriodMonths)) {
+      return `${productName}の導入は、現在の条件では年間純利益がマイナスまたはゼロとなり、投資回収が見込めません。導入条件の見直しが必要です。`;
+    }
+
+    const evaluation = npv > 0
+      ? '本投資は財務的に魅力的であり、戦略的価値も高いと評価されます。'
+      : 'ただしNPVがマイナスとなるため、投資判断には慎重な検討が必要です。';
+
+    return `${productName}の導入は、${FormattingUtils.formatMonths(paybackPeriodMonths)}での投資回収と、3年間で${ROICalculator.formatPercentage(roi3Year)}のROIを実現します。${evaluation}`;
+  }
+
   private static generateFullReport(inputs: ROIInputs, results: ROIResults): string {
     const { basicInfo, humanResources, businessMetrics } = inputs;
     const { 
@@ -110,7 +125,7 @@ export class ReportGenerator {
 - **初期投資額**: ${ROICalculator.formatCurrency(initialInvestmentTotal)}
 - **年間削減額**: ${ROICalculator.formatCurrency(annualSavings)}
 - **年間純利益**: ${ROICalculator.formatCurrency(netAnnualBenefit)}
-- **投資回収期間**: ${paybackPeriodMonths.toFixed(1)}ヶ月
+- **投資回収期間**: ${FormattingUtils.formatMonths(paybackPeriodMonths)}
 
 ### 収益性指標
 - **3年間ROI**: ${ROICalculator.formatPercentage(roi3Year)}
@@ -131,7 +146,7 @@ export class ReportGenerator {
 - **純削減額**: ${ROICalculator.formatCurrency(netAnnualBenefit)}
 
 ## 結論
-${basicInfo.productName}の導入は、${paybackPeriodMonths.toFixed(1)}ヶ月での投資回収と、${basicInfo.analysisYears}年間で${ROICalculator.formatPercentage(roi3Year)}のROIを実現します。本投資は財務的に魅力的であり、戦略的価値も高いと評価されます。
+${this.generateConclusion(basicInfo.productName, results)}
 
 ## 推奨事項
 ${this.generateRecommendedAction(results)}
