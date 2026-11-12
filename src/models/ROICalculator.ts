@@ -1,4 +1,5 @@
 import { ROIInputs, ROIResults } from './DataTypes';
+import { FormattingUtils } from '../utils/formatting';
 
 export class ROICalculator {
   private static readonly DISCOUNT_RATE = 0.08; // 8% discount rate for NPV calculations
@@ -77,8 +78,8 @@ export class ROICalculator {
     // Net annual benefit (savings minus operational costs)
     const netAnnualBenefit = annualSavings - annualOperationalCost;
 
-    // Payback period calculation
-    const paybackPeriodMonths = initialInvestmentTotal / (netAnnualBenefit / this.MONTHS_PER_YEAR);
+    // Payback period calculation (never recovered when the net benefit is not positive)
+    const paybackPeriodMonths = this.calculatePaybackMonths(initialInvestmentTotal, netAnnualBenefit);
 
     // ROI calculations
     const roi3Year = this.calculateROIPercentage(initialInvestmentTotal, netAnnualBenefit, 3);
@@ -126,9 +127,23 @@ export class ROICalculator {
     };
   }
 
+  private static calculatePaybackMonths(initialInvestment: number, annualBenefit: number): number {
+    if (initialInvestment <= 0) {
+      return 0;
+    }
+    if (annualBenefit <= 0) {
+      return Infinity;
+    }
+    return initialInvestment / (annualBenefit / this.MONTHS_PER_YEAR);
+  }
+
   private static calculateROIPercentage(initialInvestment: number, annualBenefit: number, years: number): number {
     const totalBenefit = annualBenefit * years;
     const totalCost = initialInvestment;
+    if (totalCost <= 0) {
+      // ROI is undefined without an investment
+      return NaN;
+    }
     return ((totalBenefit - totalCost) / totalCost) * 100;
   }
 
@@ -143,28 +158,41 @@ export class ROICalculator {
   }
 
   private static calculateIRR(initialInvestment: number, annualBenefit: number, years: number): number {
-    // Simple IRR calculation using Newton-Raphson method
+    // IRR only exists for a conventional cash flow (investment first, positive returns after)
+    if (initialInvestment <= 0 || annualBenefit <= 0 || years < 1) {
+      return NaN;
+    }
+
+    // Newton-Raphson method
     let irr = 0.1; // Initial guess
     const tolerance = 0.0001;
     const maxIterations = 100;
-    
+
     for (let i = 0; i < maxIterations; i++) {
       let f = -initialInvestment;
       let df = 0;
-      
+
       for (let year = 1; year <= years; year++) {
         f += annualBenefit / Math.pow(1 + irr, year);
         df -= year * annualBenefit / Math.pow(1 + irr, year + 1);
       }
-      
+
       if (Math.abs(f) < tolerance) {
-        break;
+        return irr * 100;
       }
-      
-      irr = irr - f / df;
+
+      const next = irr - f / df;
+      if (!Number.isFinite(next) || next <= -1) {
+        // Diverged outside the domain of the NPV function
+        return NaN;
+      }
+      if (Math.abs(next - irr) < 1e-12) {
+        return next * 100;
+      }
+      irr = next;
     }
-    
-    return irr * 100;
+
+    return NaN;
   }
 
   private static calculateCumulativeSavings(
@@ -204,7 +232,7 @@ export class ROICalculator {
   }
 
   static formatPercentage(value: number, decimals: number = 1): string {
-    return `${value.toFixed(decimals)}%`;
+    return FormattingUtils.formatPercentage(value, decimals);
   }
 
   static formatNumber(value: number): string {

@@ -9,6 +9,9 @@ export class FormattingUtils {
   }
 
   static formatPercentage(value: number, decimals: number = 1): string {
+    if (!Number.isFinite(value)) {
+      return '算出不可';
+    }
     return `${value.toFixed(decimals)}%`;
   }
 
@@ -32,6 +35,12 @@ export class FormattingUtils {
   }
 
   static formatMonths(months: number): string {
+    if (Number.isNaN(months)) {
+      return '算出不可';
+    }
+    if (months === Infinity) {
+      return '回収不可';
+    }
     if (months < 1) {
       return '1ヶ月未満';
     } else if (months < 12) {
@@ -139,13 +148,15 @@ export class FormattingUtils {
   }
 
   static formatCurrencyCompact(amount: number): string {
-    if (amount >= 100000000) {
-      return `${(amount / 100000000).toFixed(1)}億円`;
-    } else if (amount >= 10000) {
-      return `${(amount / 10000).toFixed(1)}万円`;
-    } else if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(1)}千円`;
+    const sign = amount < 0 ? '-' : '';
+    const abs = Math.abs(amount);
+    if (abs >= 100000000) {
+      return `${sign}${(abs / 100000000).toFixed(1)}億円`;
+    } else if (abs >= 10000) {
+      return `${sign}${(abs / 10000).toFixed(1)}万円`;
+    } else if (abs >= 1000) {
+      return `${sign}${(abs / 1000).toFixed(1)}千円`;
     }
-    return `${amount}円`;
+    return `${sign}${Math.round(abs)}円`;
   }
 }
