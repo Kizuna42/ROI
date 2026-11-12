@@ -47,10 +47,13 @@ export class ROICalculator {
     const currentTotalAnnualCost = currentAnnualLaborCost + currentAnnualAdditionalCosts;
 
     // Calculate savings from efficiency gains
-    const laborSavings = 
-      (efficiencyGains.personnelReduction / 100) * currentAnnualLaborCost +
-      (efficiencyGains.workHourReduction / 100) * currentAnnualLaborCost +
-      (efficiencyGains.automationPercentage / 100) * currentAnnualLaborCost;
+    // 各削減率は残りの人件費に順に効くものとして乗算で合成する（単純合算すると 100% を超えうるため）
+    const laborReductionRate = this.combineReductionRates([
+      efficiencyGains.personnelReduction,
+      efficiencyGains.workHourReduction,
+      efficiencyGains.automationPercentage
+    ]);
+    const laborSavings = laborReductionRate * currentAnnualLaborCost;
 
     // Calculate savings from quality improvements
     const errorCostReduction = 
@@ -125,6 +128,18 @@ export class ROICalculator {
       monthlySavings,
       costComparison
     };
+  }
+
+  /**
+   * 複数の削減率（%）を 1 − Π(1 − r_i) で合成し、0〜1 の割合で返す。
+   * 各率は 0〜100% に丸めるため、合成結果が 100% を超えることはない。
+   */
+  static combineReductionRates(ratesPercent: Array<number | undefined>): number {
+    const remaining = ratesPercent.reduce<number>((acc, rate) => {
+      const r = typeof rate === 'number' && Number.isFinite(rate) ? Math.min(Math.max(rate, 0), 100) / 100 : 0;
+      return acc * (1 - r);
+    }, 1);
+    return 1 - remaining;
   }
 
   private static calculatePaybackMonths(initialInvestment: number, annualBenefit: number): number {

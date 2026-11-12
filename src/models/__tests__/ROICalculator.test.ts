@@ -11,7 +11,7 @@ describe('ROICalculator.calculate', () => {
 
     const labor = 10 * 3000 * 1920;
     const expectedSavings =
-      labor * (0.2 + 0.3 + 0.5) + 0.7 * 0.05 * labor + 0.8 * 0.03 * labor + 500_000 + 300_000;
+      labor * (1 - 0.8 * 0.7 * 0.5) + 0.7 * 0.05 * labor + 0.8 * 0.03 * labor + 500_000 + 300_000;
     expect(results.annualSavings).toBeCloseTo(expectedSavings);
 
     const net = expectedSavings - results.annualOperationalCost;
@@ -109,5 +109,48 @@ describe('ROICalculator.calculate', () => {
     expect(results.paybackPeriodMonths).toBe(0);
     expect(Number.isNaN(results.roi3Year)).toBe(true);
     expect(Number.isNaN(results.irr)).toBe(true);
+  });
+});
+
+describe('ROICalculator labor reduction rates', () => {
+  const labor = 10 * 3000 * 1920;
+  const laborOnly = (personnelReduction: number, workHourReduction: number, automationPercentage: number) =>
+    ROICalculator.calculate(
+      createInputs({
+        efficiencyGains: { personnelReduction, workHourReduction, automationPercentage },
+        qualityImprovements: { errorReduction: 0, reworkReduction: 0 },
+        otherBenefits: { opportunityLossReduction: 0, scalabilityImprovement: 0 },
+      }),
+    ).annualSavings;
+
+  it('combines rates multiplicatively instead of summing them', () => {
+    expect(ROICalculator.combineReductionRates([20, 30, 50])).toBeCloseTo(1 - 0.8 * 0.7 * 0.5);
+  });
+
+  it('never exceeds the current labor cost when the simple sum is over 100%', () => {
+    // 60 + 50 + 40 = 150% when summed
+    const savings = laborOnly(60, 50, 40);
+    expect(savings).toBeCloseTo(labor * (1 - 0.4 * 0.5 * 0.6));
+    expect(savings).toBeLessThan(labor);
+  });
+
+  it('yields no labor savings when every rate is 0%', () => {
+    expect(ROICalculator.combineReductionRates([0, 0, 0])).toBe(0);
+    expect(laborOnly(0, 0, 0)).toBe(0);
+  });
+
+  it('caps labor savings at the full labor cost when every rate is 100%', () => {
+    expect(ROICalculator.combineReductionRates([100, 100, 100])).toBe(1);
+    expect(laborOnly(100, 100, 100)).toBeCloseTo(labor);
+  });
+
+  it('caps labor savings at the full labor cost when any single rate is 100%', () => {
+    expect(laborOnly(100, 0, 0)).toBeCloseTo(labor);
+    expect(laborOnly(0, 0, 100)).toBeCloseTo(labor);
+  });
+
+  it('clamps out-of-range and missing rates', () => {
+    expect(ROICalculator.combineReductionRates([150, -20])).toBe(1);
+    expect(ROICalculator.combineReductionRates([-20, Number.NaN, undefined])).toBe(0);
   });
 });
