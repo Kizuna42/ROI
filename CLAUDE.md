@@ -10,10 +10,11 @@ SaaS ROI Analysis System - A comprehensive React TypeScript application for anal
 
 ## Development Commands
 
-- `npm dev` - Start development server
-- `npm build` - Build for production (runs TypeScript compilation and Vite build)
-- `npm lint` - Run ESLint for code quality checks
-- `npm preview` - Preview production build
+- `npm run dev` - Start development server
+- `npm run build` - Build for production (runs TypeScript compilation and Vite build)
+- `npm run lint` - Run ESLint for code quality checks
+- `npm test` - Run unit tests (Vitest)
+- `npm run preview` - Preview production build
 
 ## Project Architecture
 
