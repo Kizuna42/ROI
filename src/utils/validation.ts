@@ -9,6 +9,19 @@ export class ValidationUtils {
   static validateROIInputs(inputs: ROIInputs): ValidationError[] {
     const errors: ValidationError[] = [];
 
+    // Numeric fields must hold finite numbers. Empty number inputs become NaN
+    // (valueAsNumber), which would otherwise slip through the range checks below.
+    for (const [section, fields] of Object.entries(inputs)) {
+      for (const [key, value] of Object.entries(fields as Record<string, unknown>)) {
+        if (typeof value !== 'string' && !(typeof value === 'number' && Number.isFinite(value))) {
+          errors.push({ field: `${section}.${key}`, message: '数値を入力してください' });
+        }
+      }
+    }
+    if (errors.length > 0) {
+      return errors;
+    }
+
     // Basic Info validation
     if (!inputs.basicInfo.productName.trim()) {
       errors.push({ field: 'basicInfo.productName', message: '製品名を入力してください' });
@@ -16,8 +29,12 @@ export class ValidationUtils {
     if (!inputs.basicInfo.purpose.trim()) {
       errors.push({ field: 'basicInfo.purpose', message: '導入目的を入力してください' });
     }
-    if (inputs.basicInfo.analysisYears < 1 || inputs.basicInfo.analysisYears > 10) {
-      errors.push({ field: 'basicInfo.analysisYears', message: '分析期間は1年から10年の間で入力してください' });
+    if (
+      !Number.isInteger(inputs.basicInfo.analysisYears) ||
+      inputs.basicInfo.analysisYears < 1 ||
+      inputs.basicInfo.analysisYears > 10
+    ) {
+      errors.push({ field: 'basicInfo.analysisYears', message: '分析期間は1年から10年の整数で入力してください' });
     }
 
     // Human Resources validation

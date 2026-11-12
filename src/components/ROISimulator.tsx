@@ -174,7 +174,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">分析期間（年）</label>
                 <input
-                  {...register('basicInfo.analysisYears', { 
+                  {...register('basicInfo.analysisYears', {
+                    valueAsNumber: true,
                     required: '分析期間は必須です',
                     min: { value: 1, message: '1年以上で入力してください' },
                     max: { value: 10, message: '10年以下で入力してください' }
@@ -198,7 +199,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">従業員数</label>
                 <input
-                  {...register('humanResources.employeeCount', { 
+                  {...register('humanResources.employeeCount', {
+                    valueAsNumber: true,
                     required: '従業員数は必須です',
                     min: { value: 1, message: '1以上で入力してください' }
                   })}
@@ -209,7 +211,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">平均時給（円）</label>
                 <input
-                  {...register('humanResources.averageHourlyWage', { 
+                  {...register('humanResources.averageHourlyWage', {
+                    valueAsNumber: true,
                     required: '平均時給は必須です',
                     min: { value: 0, message: '0以上で入力してください' }
                   })}
@@ -220,7 +223,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">月間労働時間</label>
                 <input
-                  {...register('humanResources.monthlyHours', { 
+                  {...register('humanResources.monthlyHours', {
+                    valueAsNumber: true,
                     required: '月間労働時間は必須です',
                     min: { value: 0, message: '0以上で入力してください' }
                   })}
@@ -231,7 +235,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">年間労働時間</label>
                 <input
-                  {...register('humanResources.annualHours', { 
+                  {...register('humanResources.annualHours', {
+                    valueAsNumber: true,
                     required: '年間労働時間は必須です',
                     min: { value: 0, message: '0以上で入力してください' }
                   })}
@@ -251,7 +256,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">月間取引件数</label>
                 <input
-                  {...register('businessMetrics.monthlyTransactions', { 
+                  {...register('businessMetrics.monthlyTransactions', {
+                    valueAsNumber: true,
                     required: '月間取引件数は必須です',
                     min: { value: 0, message: '0以上で入力してください' }
                   })}
@@ -262,7 +268,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">平均処理時間（分）</label>
                 <input
-                  {...register('businessMetrics.avgProcessingTimeMinutes', { 
+                  {...register('businessMetrics.avgProcessingTimeMinutes', {
+                    valueAsNumber: true,
                     required: '平均処理時間は必須です',
                     min: { value: 0, message: '0以上で入力してください' }
                   })}
@@ -273,7 +280,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">エラー率（%）</label>
                 <input
-                  {...register('businessMetrics.errorRate', { 
+                  {...register('businessMetrics.errorRate', {
+                    valueAsNumber: true,
                     required: 'エラー率は必須です',
                     min: { value: 0, message: '0以上で入力してください' },
                     max: { value: 100, message: '100以下で入力してください' }
@@ -286,7 +294,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">手戻り率（%）</label>
                 <input
-                  {...register('businessMetrics.reworkRate', { 
+                  {...register('businessMetrics.reworkRate', {
+                    valueAsNumber: true,
                     required: '手戻り率は必須です',
                     min: { value: 0, message: '0以上で入力してください' },
                     max: { value: 100, message: '100以下で入力してください' }
@@ -308,7 +317,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">人員削減率（%）</label>
                 <input
-                  {...register('efficiencyGains.personnelReduction', { 
+                  {...register('efficiencyGains.personnelReduction', {
+                    valueAsNumber: true,
                     required: '人員削減率は必須です',
                     min: { value: 0, message: '0以上で入力してください' },
                     max: { value: 100, message: '100以下で入力してください' }
@@ -321,7 +331,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">労働時間削減率（%）</label>
                 <input
-                  {...register('efficiencyGains.workHourReduction', { 
+                  {...register('efficiencyGains.workHourReduction', {
+                    valueAsNumber: true,
                     required: '労働時間削減率は必須です',
                     min: { value: 0, message: '0以上で入力してください' },
                     max: { value: 100, message: '100以下で入力してください' }
@@ -334,7 +345,8 @@ const ROISimulator: React.FC = () => {
               <div className="form-group">
                 <label className="form-label">自動化率（%）</label>
                 <input
-                  {...register('efficiencyGains.automationPercentage', { 
+                  {...register('efficiencyGains.automationPercentage', {
+                    valueAsNumber: true,
                     required: '自動化率は必須です',
                     min: { value: 0, message: '0以上で入力してください' },
                     max: { value: 100, message: '100以下で入力してください' }
